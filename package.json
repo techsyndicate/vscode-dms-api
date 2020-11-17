@@ -1,0 +1,35 @@
+{
+    "name": "vscode-dms-api",
+    "version": "1.0.0",
+    "description": "REST API for VSCode DMs",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js",
+        "dev": "nodemon app.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/techsyndicate/vscode-dms-api.git"
+    },
+    "keywords": [
+        "api",
+        "vscode",
+        "extension",
+        "dm",
+        "social",
+        "media"
+    ],
+    "author": "Tech Syndicate",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/techsyndicate/vscode-dms-api/issues"
+    },
+    "homepage": "https://github.com/techsyndicate/vscode-dms-api#readme",
+    "dependencies": {
+        "dotenv": "^8.2.0",
+        "express": "^4.17.1",
+        "mongoose": "^5.10.15",
+        "nodemon": "^2.0.6",
+        "socket.io": "^3.0.1"
+    }
+}
