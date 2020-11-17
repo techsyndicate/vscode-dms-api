@@ -14,8 +14,8 @@ const UserSchema = new mongoose.Schema({
         required: true
     },
     conversations: {
-        type: Array,
-        required: true
+        type: Object,
+        required: false
     }
 })
 
