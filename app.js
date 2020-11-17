@@ -4,6 +4,7 @@ const io = require('socket.io')(5000);
 require('dotenv').config();
 
 const indexRouter = require('./routes/index');
+const signinRouter = require('./routes/signin.js')
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/api', indexRouter);
+app.use('/api/users/signin', signinRouter);
 
 io.on('connection', (socket) => {
     console.log('a user connected');
