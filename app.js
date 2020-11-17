@@ -7,6 +7,7 @@ require('dotenv').config();
 const indexRouter = require('./routes/index');
 const signinRouter = require('./routes/signin')
 const contactsRouter = require('./routes/contacts');
+const usersRouter = require('./routes/users')
 
 const db = process.env.MONGODB_URL;
 
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', indexRouter);
 app.use('/api/users/contacts', contactsRouter);
 app.use('/api/users/signin', signinRouter);
+app.use('/api/users', usersRouter);
 
 io.on('connection', (socket) => {
     console.log('a user connected');
