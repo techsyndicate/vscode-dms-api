@@ -5,4 +5,7 @@ router.get('/', (req, res) => {
     res.send('hello world');
 });
 
-module.exports = router;
+module.exports = io => {
+    io.on('connection', socket => console.log('User connected'));
+    return router;
+};

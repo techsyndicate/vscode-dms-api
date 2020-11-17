@@ -14,7 +14,7 @@ const MessageSchema = new mongoose.Schema({
         required: true
     },
     conversation_id: {
-        type: Number,
+        type: String,
         required: true
     },
     type: {
