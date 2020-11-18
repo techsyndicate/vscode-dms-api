@@ -16,6 +16,10 @@ const UserSchema = new mongoose.Schema({
     conversations: {
         type: Object,
         required: false
+    },
+    socket_id: {
+        type: String,
+        required: false
     }
 })
 
