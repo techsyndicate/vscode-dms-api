@@ -6,7 +6,15 @@ require('dotenv').config();
 const db = process.env.MONGODB_URL;
 
 const app = express();
-const io = require('socket.io')(5000);
+const socketIO = require('socket.io');
+
+const port = process.env.PORT || 3000
+const server = app.listen(port, (err) => {
+    console.log(`API listening on ${port}!`)
+    if (err) throw err
+})
+
+const io = socketIO(server);
 
 const indexRouter = require('./routes/index');
 const signinRouter = require('./routes/signin');
@@ -31,14 +39,8 @@ app.use('/api/users/signin', signinRouter);
 app.use('/api/users', usersRouter);
 app.use('./api/messages', messageRouter)
 
-//io.on('connection', socket => {
-//    console.log('connected');
-//})
-
-const port = process.env.PORT || 3000
-app.listen(port, (err) => {
-    console.log(`API listening on ${port}!`)
-    if (err) throw err
+io.on('connection', socket => {
+    console.log('a user connected');
 })
 
 module.exports = app;
