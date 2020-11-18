@@ -12,14 +12,16 @@ router.get('/:username', (req, res) => {
         .then((response) => sender = response.data.login);
 
     let conversationId = '';
-    if (charCodeAt(sender[0]) < charCodeAt(receiver[0])){
+    if (charCodeAt(sender[0]) < charCodeAt(receiver[0])) {
         conversationId = sender + receiver;
     } else {
         conversationId = receiver + sender;
     }
 
     Messages.find({ conversation_id: conversationId })
-        .sort({date: 'desc'})
+        .sort({ date: 'desc' })
         .then(messages => res.json(messages))
         .catch(err => console.log(err));
 });
+
+module.exports = router
