@@ -2,12 +2,12 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const cors = require("cors");
+const socketIO = require('socket.io');
 require('dotenv').config();
 
 const db = process.env.MONGODB_URL;
 
 const app = express();
-const socketIO = require('socket.io');
 
 const port = process.env.PORT || 3000
 const server = app.listen(port, (err) => {
@@ -15,7 +15,7 @@ const server = app.listen(port, (err) => {
     if (err) throw err
 })
 
-const io = socketIO(server);
+const io = socketIO(server, { cors: true, origins: '*:*' });
 
 io.on('connection', socket => {
     console.log('a user connected');
