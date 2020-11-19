@@ -73,6 +73,7 @@ io.on('connection', socket => {
         }
     });
     socket.on("status", async(status) => {
+        console.log(status)
         let user = await User.findOne({ socket_id: socket.id })
         socket.broadcast.emit("status", {
             status: status,
