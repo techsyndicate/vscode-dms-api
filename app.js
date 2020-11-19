@@ -72,7 +72,7 @@ io.on('connection', socket => {
             console.log('denied')
         }
     });
-    socket.on("status", status => {
+    socket.on("status", async(status) => {
         let user = await User.findOne({ socket_id: socket.id })
         socket.broadcast.emit("status", {
             status: status,
