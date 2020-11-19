@@ -72,6 +72,10 @@ io.on('connection', socket => {
         }
     });
     socket.on("status", async(status) => {
+<<<<<<< HEAD
+=======
+        console.log(status)
+>>>>>>> 32a23103754c9bbeb73e105d84e0cb7bdb3f53b1
         let user = await User.findOne({ socket_id: socket.id })
         redirectStatus()
     })
@@ -88,4 +92,10 @@ io.on('connection', socket => {
     }
 });
 
+<<<<<<< HEAD
 module.exports = app;
+=======
+
+
+module.exports = app;
+>>>>>>> 32a23103754c9bbeb73e105d84e0cb7bdb3f53b1
