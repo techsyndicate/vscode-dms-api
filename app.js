@@ -39,15 +39,14 @@ app.use('/api/users', usersRouter);
 app.use('/api/messages', messageRouter);
 
 io.on('connection', socket => {
-    let socketId = ""
     console.log('a user connected: ' + socket.id);
     socket.on('disconnect', async() => {
+        broadcastStatus('offline')
         console.log(socket.id)
         let user = await User.findOne({ socket_id: socket.id })
         console.log(user)
         user.socket_id = ""
         user.save()
-        socket.broadcast.emit("status", { user: user.username, status: 'offline' })
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
@@ -72,16 +71,21 @@ io.on('connection', socket => {
             console.log('denied')
         }
     });
-    socket.on("status", status => {
+    socket.on("status", async(status) => {
         let user = await User.findOne({ socket_id: socket.id })
+        redirectStatus()
+    })
+
+    function broadcastStatus(status) {
+        socket.broadcast.emit("status", { user: user.username, status: status })
+    }
+
+    function redirectStatus() {
         socket.broadcast.emit("status", {
             status: status,
             user: user.username
         })
-    })
-
+    }
 });
-
-
 
 module.exports = app;
