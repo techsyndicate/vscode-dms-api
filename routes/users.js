@@ -45,6 +45,7 @@ router.get('/socket', async(req, res) => {
     const socketId = req.query.socket_id;
     const user = await User.findOne({ access_token: accessToken });
     await user.updateOne({ socket_id: socketId });
+    res.sendStatus(200)
 });
 
 router.get('/dissocket', async(req, res) => {

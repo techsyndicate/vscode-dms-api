@@ -3,6 +3,8 @@ const path = require('path');
 const mongoose = require('mongoose');
 const cors = require("cors");
 const socketIO = require('socket.io');
+const User = require('./models/User');
+const Message = require('./models/Message')
 require('dotenv').config();
 
 const db = process.env.MONGODB_URL;
@@ -34,19 +36,35 @@ app.use(cors());
 app.use('/api', indexRouter);
 app.use('/api/users/signin', signinRouter);
 app.use('/api/users', usersRouter);
-app.use('./api/messages', messageRouter);
+app.use('/api/messages', messageRouter);
 
 io.on('connection', socket => {
     let socketId = ""
-    let message = {}
     console.log('a user connected: ' + socket.id);
-    /*socket.on('send-message', msg => {
-        console.log(msg)
-        msg = msg.json()
-        socketId = msg.socket_id
-        message = msg
+    socket.on('send-message', async(msg) => {
+        msg = JSON.parse(msg)
+        let user = await User.findOne({ access_token: msg.access_token })
+        if (user.username == msg.sender) {
+            let message = new Message({
+                date: msg.date,
+                sender: msg.sender,
+                receiver: msg.receiver,
+                type: msg.type,
+                message: msg.message,
+                conversation_id: msg.conversation_id
+            })
+            message.save()
+            let receiver = await User.findOne({ username: msg.receiver })
+            if (receiver.socket_id) {
+                io.to(receiver.socket_id).emit('receive-message', message);
+            } else {
+                console.log('User offline')
+            }
+        } else {
+            console.log('denied')
+        }
     });
-    io.to(socketId).emit('receive-message', message.toString());*/
+
 });
 
 
