@@ -11,17 +11,17 @@ router.get('/', (req, res) => {
     });
 });
 
-router.get('/contacts', async (req, res) => {
+router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
     const following = [];
     const followers = [];
 
     await axios.get('https://api.github.com/user/following', oauthHeader(userAccessToken))
-      .then(response => following = response.data.forEach(value => following.push(value.login)))
-      .catch(err => console.log(err));
+        .then(response => following = response.data.forEach(value => following.push(value.login)))
+        .catch(err => console.log(err));
     await axios.get('https://api.github.com/user/followers', oauthHeader(userAccessToken))
-      .then(response => followers = response.data.forEach(value => followers.push(value.login)))
-      .catch(err => console.log(err));
+        .then(response => followers = response.data.forEach(value => followers.push(value.login)))
+        .catch(err => console.log(err));
 
     const contactsList = [];
     const contacts = [];
@@ -40,31 +40,32 @@ router.get('/contacts', async (req, res) => {
     res.json(contacts);
 });
 
-router.get('/socket', async (req, res) => {
+router.get('/socket', async(req, res) => {
     const accessToken = req.query.access_token;
     const socketId = req.query.socket_id;
     const user = await User.findOne({ access_token: accessToken });
     await user.updateOne({ socket_id: socketId });
 });
 
-router.get('/dissocket', async (req, res) => {
+router.get('/dissocket', async(req, res) => {
     const accessToken = req.query.access_token;
     const user = await User.findOne({ access_token: accessToken });
     await user.updateOne({ socket_id: '' });
+    res.sendStatus(200)
 });
 
-router.get('/:username/status', async (req, res) => {
+router.get('/:username/status', async(req, res) => {
     const username = req.params.username;
     const accessToken = req.query.access_token;
-    const getContacts = await axios.get('http://localhost:3000/api/users/contacts', { params: { access_token: accessToken }});
+    const getContacts = await axios.get(`${process.env.BASE_URL}/api/users/contacts`, { params: { access_token: accessToken } });
     let contacts = [];
     getContacts.data.forEach(contact => { contacts.push(contact.username); });
 
     if (!contacts.includes(username)) {
-        res.send(401);
+        res.sendStatus(401);
     } else {
         User.findOne({ username: username }).then(user => {
-            !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online'});
+            !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online' });
         });
     }
 });

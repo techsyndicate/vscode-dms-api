@@ -38,9 +38,12 @@ app.use('./api/messages', messageRouter);
 
 io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
-    socket.on('chat message', msg => {
-        console.log(msg);
+    socket.on('send-message', msg => {
+        console.log(msg)
     });
+    io.to(socketId).emit('receive-message', message);
 });
+
+
 
 module.exports = app;
