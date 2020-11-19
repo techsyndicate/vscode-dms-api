@@ -41,8 +41,10 @@ app.use('/api/messages', messageRouter);
 io.on('connection', socket => {
     let socketId = ""
     console.log('a user connected: ' + socket.id);
-    socket.on('disconnect', async(reason) => {
+    socket.on('disconnect', async() => {
+        console.log(socket.id)
         let user = await User.findOne({ socket_id: socket.id })
+        console.log(user)
         user.updateOne({ socket_id: "" })
     })
     socket.on('send-message', async(msg) => {
