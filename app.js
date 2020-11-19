@@ -45,7 +45,8 @@ io.on('connection', socket => {
         console.log(socket.id)
         let user = await User.findOne({ socket_id: socket.id })
         console.log(user)
-        user.updateOne({ socket_id: "" })
+        user.socket_id = ""
+        user.save()
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
