@@ -37,11 +37,14 @@ app.use('/api/users', usersRouter);
 app.use('./api/messages', messageRouter);
 
 io.on('connection', socket => {
+    let socketId = ""
     console.log('a user connected: ' + socket.id);
     socket.on('send-message', msg => {
         console.log(msg)
+        msg = msg.json()
+        socketId = msg.socket_id
     });
-    io.to(socketId).emit('receive-message', message);
+    io.to(socketId).emit('receive-message', message.toString());
 });
 
 
