@@ -13,22 +13,56 @@ router.get('/', (req, res) => {
 
 router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
-    const following = [];
-    const followers = [];
+    let nofollowers = 0;
+    let nofollowing = 0;
+    let following = [];
+    let followers = [];
+    let promises = [];
+    let followIndex = 0;
+    let followingIndex = 0;
 
-    await axios.get('https://api.github.com/user/following', oauthHeader(userAccessToken))
-        .then(response => following = response.data.forEach(value => following.push(value.login)))
-        .catch(err => console.log(err));
-    await axios.get('https://api.github.com/user/followers', oauthHeader(userAccessToken))
-        .then(response => followers = response.data.forEach(value => followers.push(value.login)))
-        .catch(err => console.log(err));
+    let userResponse = await axios.get(`https://api.github.com/user`, oauthHeader(userAccessToken))
+    nofollowers = userResponse.data.followers
+    nofollowing = userResponse.data.following
 
-    const contactsList = [];
-    const contacts = [];
+    followIndex = Math.ceil(nofollowers / 100)
+    followingIndex = Math.ceil(nofollowing / 100)
+
+    for (let i = 1; i < followIndex + 1; i++) {
+        promises.push(
+            axios.get(`https://api.github.com/user/followers?per_page=100&page=${followIndex}`, oauthHeader(userAccessToken))
+            .then(response => {
+                console.log(response.data.length)
+                if (Array.isArray(response.data)) {
+                    response.data.forEach(value => followers.push(value.login));
+                }
+            })
+        )
+    }
+
+    for (let i = 1; i < followingIndex + 1; i++) {
+        promises.push(
+            axios.get(`https://api.github.com/user/following?per_page=100&page=${followingIndex}`, oauthHeader(userAccessToken))
+            .then(response => {
+                console.log(response.data.length)
+                if (Array.isArray(response.data)) {
+                    response.data.forEach(value => {
+                        following.push(value.login)
+                    });
+                }
+            })
+        )
+    }
+
+    await Promise.all(promises)
+
+    let contactsList = [];
+    let contacts = [];
 
     following.forEach(value => {
         followers.includes(value) ? contactsList.push(value) : null;
     });
+
     contactsList.forEach(contact => {
         data = {
             'username': contact,
