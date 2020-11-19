@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const GitHub = require('gh.js');
 const User = require('../models/User');
 const { oauthHeader } = require('../controllers/constants')
 
@@ -14,46 +13,48 @@ router.get('/', (req, res) => {
 
 router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
+    let nofollowers = 0;
+    let nofollowing = 0;
     let following = [];
     let followers = [];
-    let followIndex = 1;
-    let nextFollowPage = true;
-    let followingIndex = 1;
-    let nextFollowingPage = true;
+    let promises = [];
+    let followIndex = 0;
+    let followingIndex = 0;
 
-    while (nextFollowPage) {
-        axios.get(`https://api.github.com/user/followers?per_page=100&page=${followIndex}`, oauthHeader(userAccessToken))
-        .then(response => {
-            if (response.data == []) { nextFollowPage = false; }
-            else {
-                followers = response.data.forEach(value => followers.push(value.login));
-                followIndex++;
-            }
-        })
-        .catch(err => console.log(err));
+    let userResponse = await axios.get(`https://api.github.com/user`, oauthHeader(userAccessToken))
+    nofollowers = userResponse.data.followers
+    nofollowing = userResponse.data.following
 
-        console.log(followIndex);
+    followIndex = Math.ceil(nofollowers / 100)
+    followingIndex = Math.ceil(nofollowing / 100)
+
+    for (let i = 1; i < followIndex + 1; i++) {
+        promises.push(
+            axios.get(`https://api.github.com/user/followers?per_page=100&page=${followIndex}`, oauthHeader(userAccessToken))
+            .then(response => {
+                console.log(response.data.length)
+                if (Array.isArray(response.data)) {
+                    response.data.forEach(value => followers.push(value.login));
+                }
+            })
+        )
     }
 
-    console.log(followers);
-
-    while (nextFollowingPage == true) {
-        axios.get(`https://api.github.com/user/following?per_page=100&page={followingIndex}`, oauthHeader(userAccessToken))
-        .then(response => {
-            if (response.data == []) {
-                nextFollowingPage = false;
-            }
-            else {
-                following = response.data.forEach(value => following.push(value.login));
-                followingIndex++;
-            }
-        })
-        .catch(err => console.log(err));
-
-        console.log(followingIndex);
+    for (let i = 1; i < followingIndex + 1; i++) {
+        promises.push(
+            axios.get(`https://api.github.com/user/following?per_page=100&page=${followingIndex}`, oauthHeader(userAccessToken))
+            .then(response => {
+                console.log(response.data.length)
+                if (Array.isArray(response.data)) {
+                    response.data.forEach(value => {
+                        following.push(value.login)
+                    });
+                }
+            })
+        )
     }
 
-    console.log(following);
+    await Promise.all(promises)
 
     let contactsList = [];
     let contacts = [];
@@ -70,7 +71,6 @@ router.get('/contacts', async(req, res) => {
         contacts.push(data);
     });
 
-    console.log(contacts.length);
     res.json(contacts);
 });
 
