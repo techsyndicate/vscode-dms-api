@@ -40,13 +40,13 @@ io.on('connection', socket => {
     let socketId = ""
     let message = {}
     console.log('a user connected: ' + socket.id);
-    socket.on('send-message', msg => {
+    /*socket.on('send-message', msg => {
         console.log(msg)
         msg = msg.json()
         socketId = msg.socket_id
         message = msg
     });
-    io.to(socketId).emit('receive-message', message.toString());
+    io.to(socketId).emit('receive-message', message.toString());*/
 });
 
 
