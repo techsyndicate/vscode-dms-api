@@ -47,6 +47,7 @@ io.on('connection', socket => {
         console.log(user)
         user.socket_id = ""
         user.save()
+        socket.broadcast.emit("status", { user: user.username, status: 'offline' })
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
@@ -71,6 +72,13 @@ io.on('connection', socket => {
             console.log('denied')
         }
     });
+    socket.on("status", status => {
+        let user = await User.findOne({ socket_id: socket.id })
+        socket.broadcast.emit("status", {
+            status: status,
+            user: user.username
+        })
+    })
 
 });
 
