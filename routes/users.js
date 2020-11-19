@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const GitHub = require('gh.js');
 const User = require('../models/User');
 const { oauthHeader } = require('../controllers/constants')
 
@@ -13,22 +14,54 @@ router.get('/', (req, res) => {
 
 router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
-    const following = [];
-    const followers = [];
+    let following = [];
+    let followers = [];
+    let followIndex = 1;
+    let nextFollowPage = true;
+    let followingIndex = 1;
+    let nextFollowingPage = true;
 
-    await axios.get('https://api.github.com/user/following', oauthHeader(userAccessToken))
-        .then(response => following = response.data.forEach(value => following.push(value.login)))
-        .catch(err => console.log(err));
-    await axios.get('https://api.github.com/user/followers', oauthHeader(userAccessToken))
-        .then(response => followers = response.data.forEach(value => followers.push(value.login)))
+    while (nextFollowPage) {
+        axios.get(`https://api.github.com/user/followers?per_page=100&page=${followIndex}`, oauthHeader(userAccessToken))
+        .then(response => {
+            if (response.data == []) { nextFollowPage = false; }
+            else {
+                followers = response.data.forEach(value => followers.push(value.login));
+                followIndex++;
+            }
+        })
         .catch(err => console.log(err));
 
-    const contactsList = [];
-    const contacts = [];
+        console.log(followIndex);
+    }
+
+    console.log(followers);
+
+    while (nextFollowingPage == true) {
+        axios.get(`https://api.github.com/user/following?per_page=100&page={followingIndex}`, oauthHeader(userAccessToken))
+        .then(response => {
+            if (response.data == []) {
+                nextFollowingPage = false;
+            }
+            else {
+                following = response.data.forEach(value => following.push(value.login));
+                followingIndex++;
+            }
+        })
+        .catch(err => console.log(err));
+
+        console.log(followingIndex);
+    }
+
+    console.log(following);
+
+    let contactsList = [];
+    let contacts = [];
 
     following.forEach(value => {
         followers.includes(value) ? contactsList.push(value) : null;
     });
+
     contactsList.forEach(contact => {
         data = {
             'username': contact,
@@ -37,6 +70,7 @@ router.get('/contacts', async(req, res) => {
         contacts.push(data);
     });
 
+    console.log(contacts.length);
     res.json(contacts);
 });
 
