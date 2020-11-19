@@ -20,8 +20,14 @@ router.get('/:username', async(req, res) => {
     console.log(conversationId)
 
     Messages.find({ conversation_id: conversationId })
-        .sort({ date: 'desc' })
-        .then(messages => res.json(messages))
+        .sort({ date: 'asc' })
+        .then(messages => {
+            if (messages.length == 0) {
+                res.sendStatus(404)
+            } else {
+                res.json(messages)
+            }
+        })
         .catch(err => console.log(err));
 });
 
