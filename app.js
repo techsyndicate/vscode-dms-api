@@ -41,12 +41,12 @@ app.use('/api/messages', messageRouter);
 io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
     socket.on('disconnect', async() => {
-        broadcastStatus('offline')
         console.log(socket.id)
         let user = await User.findOne({ socket_id: socket.id })
         console.log(user)
         user.socket_id = ""
         user.save()
+        broadcastStatus(user, 'offline')
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
@@ -74,14 +74,14 @@ io.on('connection', socket => {
     socket.on("status", async(status) => {
         console.log(status)
         let user = await User.findOne({ socket_id: socket.id })
-        redirectStatus()
+        redirectStatus(user)
     })
 
-    function broadcastStatus(status) {
+    function broadcastStatus(user, status) {
         socket.broadcast.emit("status", { user: user.username, status: status })
     }
 
-    function redirectStatus() {
+    function redirectStatus(user) {
         socket.broadcast.emit("status", {
             status: status,
             user: user.username
