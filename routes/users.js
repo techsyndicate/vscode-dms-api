@@ -20,9 +20,9 @@ router.get('/contacts', async(req, res) => {
     if (user.contacts && nofollowers == user.contacts.nofollowers && nofollowing == user.contacts.nofollowing) {
         let contacts = user.contacts.mutuals
         contacts.sort(function(a, b) {
-            var c = new Date(a.last_message_time);
-            var d = new Date(b.last_message_time);
-            return c - d;
+            let c = new Date(a.last_message_time);
+            let d = new Date(b.last_message_time);
+            return d - c;
         });
         res.json(contacts)
     } else {
@@ -34,6 +34,9 @@ router.get('/contacts', async(req, res) => {
         let contacts = await getContacts(userAccessToken);
         let storedContacts = user.contacts.mutuals;
         let storedContactsUsername = [];
+        contacts.forEach(contact => {
+            contact.last_message_time = '2000-01-31T00:00:00.000Z'
+        })
         storedContacts.forEach(value => {
             storedContactsUsername.push(value.username)
         })

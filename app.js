@@ -27,6 +27,7 @@ const messageRouter = require('./routes/messages');
 mongoose.connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log('MongoDB Connected...'))
     .catch(err => console.log(err));
+mongoose.set('useFindAndModify', false);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -67,15 +68,22 @@ io.on('connection', socket => {
             } else {
                 console.log('User offline')
             }
-            contacts = user.contacts.mutuals
-            contacts.forEach(contact => {
+            mutuals = user.contacts.mutuals
+            mutuals.forEach(contact => {
                 if (contact.username == msg.receiver) {
-                    contact.last_message_time = msg.date //last message time to sort contacts
-                    contact.last_message = msg.message //last message
+                    console.log(contact.username)
+                    contact['last_message_time'] = msg.date //last message time to sort contacts
+                    contact['last_message'] = msg.message //last message
                 }
             })
-            user.contacts.mutuals = contacts
-            user.save()
+            contacts = user.contacts
+            contacts.mutuals = mutuals
+            console.log(contacts)
+            try {
+                await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts })
+            } catch (err) {
+                console.log(err)
+            }
         } else {
             console.log('denied')
         }
