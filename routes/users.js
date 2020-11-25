@@ -13,8 +13,78 @@ router.get('/', (req, res) => {
 
 router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
-    let nofollowers = 0;
-    let nofollowing = 0;
+    let user = await User.findOne({ access_token: userAccessToken })
+    let userResponse = await axios.get(`https://api.github.com/user`, oauthHeader(userAccessToken))
+    let nofollowers = userResponse.data.followers
+    let nofollowing = userResponse.data.following
+    if (user.contacts && nofollowers == user.contacts.nofollowers && nofollowing == user.contacts.nofollowing) {
+        let contacts = user.contacts.mutuals
+        contacts.sort(function(a, b) {
+            var c = new Date(a.last_message_time);
+            var d = new Date(b.last_message_time);
+            return c - d;
+        });
+        res.json(contacts)
+    } else {
+        user.contacts = {
+            mutuals: []
+        }
+        user.contacts.nofollowers = nofollowers;
+        user.contacts.nofollowing = nofollowing;
+        let contacts = await getContacts(userAccessToken);
+        let storedContacts = user.contacts.mutuals;
+        let storedContactsUsername = [];
+        storedContacts.forEach(value => {
+            storedContactsUsername.push(value.username)
+        })
+        contacts.forEach(contact => {
+            if (!storedContactsUsername.includes(contact.username)) {
+                user.contacts.mutuals.push(contact)
+            }
+        })
+        user.save()
+        storedContacts = user.contacts.mutuals
+        storedContacts.sort(function(a, b) {
+            var c = new Date(a.last_message_time);
+            var d = new Date(b.last_message_time);
+            return c - d;
+        });
+        res.json(storedContacts)
+    }
+});
+
+router.get('/socket', async(req, res) => {
+    const accessToken = req.query.access_token;
+    const socketId = req.query.socket_id;
+    const user = await User.findOne({ access_token: accessToken });
+    await user.updateOne({ socket_id: socketId });
+    res.sendStatus(200)
+});
+
+router.get('/dissocket', async(req, res) => {
+    const accessToken = req.query.access_token;
+    const user = await User.findOne({ access_token: accessToken });
+    await user.updateOne({ socket_id: '' });
+    res.sendStatus(200)
+});
+
+router.get('/:username/status', async(req, res) => {
+    const username = req.params.username;
+    const accessToken = req.query.access_token;
+    const getContacts = await axios.get(`${process.env.BASE_URL}/api/users/contacts`, { params: { access_token: accessToken } });
+    let contacts = [];
+    getContacts.data.forEach(contact => { contacts.push(contact.username); });
+
+    if (!contacts.includes(username)) {
+        res.sendStatus(401);
+    } else {
+        User.findOne({ username: username }).then(user => {
+            !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online' });
+        });
+    }
+});
+
+async function getContacts(userAccessToken) {
     let following = [];
     let followers = [];
     let promises = [];
@@ -70,39 +140,7 @@ router.get('/contacts', async(req, res) => {
         }
         contacts.push(data);
     });
-
-    res.json(contacts);
-});
-
-router.get('/socket', async(req, res) => {
-    const accessToken = req.query.access_token;
-    const socketId = req.query.socket_id;
-    const user = await User.findOne({ access_token: accessToken });
-    await user.updateOne({ socket_id: socketId });
-    res.sendStatus(200)
-});
-
-router.get('/dissocket', async(req, res) => {
-    const accessToken = req.query.access_token;
-    const user = await User.findOne({ access_token: accessToken });
-    await user.updateOne({ socket_id: '' });
-    res.sendStatus(200)
-});
-
-router.get('/:username/status', async(req, res) => {
-    const username = req.params.username;
-    const accessToken = req.query.access_token;
-    const getContacts = await axios.get(`${process.env.BASE_URL}/api/users/contacts`, { params: { access_token: accessToken } });
-    let contacts = [];
-    getContacts.data.forEach(contact => { contacts.push(contact.username); });
-
-    if (!contacts.includes(username)) {
-        res.sendStatus(401);
-    } else {
-        User.findOne({ username: username }).then(user => {
-            !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online' });
-        });
-    }
-});
+    return contacts;
+}
 
 module.exports = router;

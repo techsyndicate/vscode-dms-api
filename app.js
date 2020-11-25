@@ -60,13 +60,22 @@ io.on('connection', socket => {
                 message: msg.message,
                 conversation_id: msg.conversation_id
             })
-            message.save()
+            message.save() //save message in database
             let receiver = await User.findOne({ username: msg.receiver })
             if (receiver.socket_id) {
-                io.to(receiver.socket_id).emit('receive-message', message);
+                io.to(receiver.socket_id).emit('receive-message', message); //send message to receiver through socket
             } else {
                 console.log('User offline')
             }
+            contacts = user.contacts.mutuals
+            contacts.forEach(contact => {
+                if (contact.username == msg.receiver) {
+                    contact.last_message_time = msg.date //last message time to sort contacts
+                    contact.last_message = msg.message //last message
+                }
+            })
+            user.contacts.mutuals = contacts
+            user.save()
         } else {
             console.log('denied')
         }
