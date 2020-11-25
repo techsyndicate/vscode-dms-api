@@ -50,7 +50,7 @@ router.get('/contacts', async(req, res) => {
         storedContacts.sort(function(a, b) {
             var c = new Date(a.last_message_time);
             var d = new Date(b.last_message_time);
-            return c - d;
+            return d - c;
         });
         res.json(storedContacts)
     }
