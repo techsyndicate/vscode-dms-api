@@ -14,6 +14,8 @@ router.get('/', (req, res) => {
 router.get('/contacts', async(req, res) => {
     const userAccessToken = req.query.access_token;
     let user = await User.findOne({ access_token: userAccessToken })
+
+    // check if followers have changed or not
     let userResponse = await axios.get(`https://api.github.com/user`, oauthHeader(userAccessToken))
     let nofollowers = userResponse.data.followers
     let nofollowing = userResponse.data.following
@@ -25,7 +27,7 @@ router.get('/contacts', async(req, res) => {
             return d - c;
         });
         res.json(contacts)
-    } else {
+    } else { // if followers/following have changed, generate mutual contacts again
         user.contacts = {
             mutuals: []
         }
@@ -35,7 +37,7 @@ router.get('/contacts', async(req, res) => {
         let storedContacts = user.contacts.mutuals;
         let storedContactsUsername = [];
         contacts.forEach(contact => {
-            contact.last_message_time = '2000-01-31T00:00:00.000Z'
+            contact.last_message_time = '2000-01-31T00:00:00.000Z' // default date
         })
         storedContacts.forEach(value => {
             storedContactsUsername.push(value.username)
@@ -45,7 +47,7 @@ router.get('/contacts', async(req, res) => {
                 user.contacts.mutuals.push(contact)
             }
         })
-        user.save()
+        user.save() // save all contacts in the database for every user for faster load times and sort easily
         storedContacts = user.contacts.mutuals
         storedContacts.sort(function(a, b) {
             var c = new Date(a.last_message_time);
@@ -88,24 +90,23 @@ router.get('/:username/status', async(req, res) => {
 });
 
 async function getContacts(userAccessToken) {
-    let following = [];
-    let followers = [];
-    let promises = [];
-    let followIndex = 0;
-    let followingIndex = 0;
+    let following = []; // list of following
+    let followers = []; // list of followers
+    let promises = []; // array of promises
+    let followIndex = 0; // pages of followers
+    let followingIndex = 0; // pages of following
 
     let userResponse = await axios.get(`https://api.github.com/user`, oauthHeader(userAccessToken))
-    nofollowers = userResponse.data.followers
-    nofollowing = userResponse.data.following
+    let nofollowers = userResponse.data.followers // no. of followers
+    let nofollowing = userResponse.data.following // no. of following
 
-    followIndex = Math.ceil(nofollowers / 100)
-    followingIndex = Math.ceil(nofollowing / 100)
+    followIndex = Math.ceil(nofollowers / 100) // set value of followIndex using no. of followers
+    followingIndex = Math.ceil(nofollowing / 100) // set value of followingIndex using no. of following
 
-    for (let i = 1; i < followIndex + 1; i++) {
-        promises.push(
+    for (let i = 1; i < followIndex + 1; i++) { // loop of requests as github api prevents from showing more than 100 follower per request
+        promises.push( // push promises into a single array so they can be done later
             axios.get(`https://api.github.com/user/followers?per_page=100&page=${followIndex}`, oauthHeader(userAccessToken))
             .then(response => {
-                console.log(response.data.length)
                 if (Array.isArray(response.data)) {
                     response.data.forEach(value => followers.push(value.login));
                 }
@@ -113,11 +114,10 @@ async function getContacts(userAccessToken) {
         )
     }
 
-    for (let i = 1; i < followingIndex + 1; i++) {
+    for (let i = 1; i < followingIndex + 1; i++) { // same for following
         promises.push(
             axios.get(`https://api.github.com/user/following?per_page=100&page=${followingIndex}`, oauthHeader(userAccessToken))
             .then(response => {
-                console.log(response.data.length)
                 if (Array.isArray(response.data)) {
                     response.data.forEach(value => {
                         following.push(value.login)
@@ -127,12 +127,12 @@ async function getContacts(userAccessToken) {
         )
     }
 
-    await Promise.all(promises)
+    await Promise.all(promises) // wait for all promises to pass
 
-    let contactsList = [];
-    let contacts = [];
+    let contactsList = []; // different structure for our api, we only need username and image
+    let contacts = []; // final array of contacts
 
-    following.forEach(value => {
+    following.forEach(value => { // mutual contacts
         followers.includes(value) ? contactsList.push(value) : null;
     });
 
