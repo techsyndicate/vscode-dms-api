@@ -4,7 +4,9 @@ const mongoose = require('mongoose');
 const cors = require("cors");
 const socketIO = require('socket.io');
 const User = require('./models/User');
-const Message = require('./models/Message')
+const Message = require('./models/Message');
+const jsStringEscape = require('js-string-escape');
+const stt = require('spaces-to-tabs');
 require('dotenv').config();
 
 const db = process.env.MONGODB_URL;
@@ -49,6 +51,7 @@ io.on('connection', socket => {
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
+        console.log(msg.message)
         let user = await User.findOne({ access_token: msg.access_token })
         if (user.username == msg.sender) {
             let message = new Message({
@@ -56,7 +59,7 @@ io.on('connection', socket => {
                 sender: msg.sender,
                 receiver: msg.receiver,
                 type: msg.type,
-                message: msg.message,
+                message: jsStringEscape(msg.message).replace(/    /g, "\\t"),
                 conversation_id: msg.conversation_id
             })
             message.save() //save message in database
