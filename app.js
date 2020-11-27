@@ -45,7 +45,7 @@ io.on('connection', socket => {
         let user = await User.findOne({ socket_id: socket.id })
         user.socket_id = ""
         user.save()
-        socket.emit('status', { user: user.username, status: 'offline' })
+        io.sockets.emit('status', { user: user.username, status: 'offline' })
     })
     socket.on('send-message', async(msg) => {
         msg = JSON.parse(msg)
