@@ -24,6 +24,10 @@ const UserSchema = new mongoose.Schema({
     contacts: {
         type: Object,
         required: false
+    },
+    chat: {
+        type: Object,
+        required: true
     }
 })
 

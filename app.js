@@ -5,7 +5,6 @@ const cors = require("cors");
 const socketIO = require('socket.io');
 const User = require('./models/User');
 const Message = require('./models/Message')
-const bodyParser = require('body-parser');
 require('dotenv').config();
 
 const db = process.env.MONGODB_URL;
@@ -24,7 +23,6 @@ const indexRouter = require('./routes/index');
 const signinRouter = require('./routes/signin');
 const usersRouter = require('./routes/users');
 const messageRouter = require('./routes/messages');
-const uploadRouter = require('./routes/upload');
 
 mongoose.connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log('MongoDB Connected...'))
@@ -36,12 +34,10 @@ app.use(express.urlencoded({ extended: false, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
-
 app.use('/api', indexRouter);
 app.use('/api/users/signin', signinRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/messages', messageRouter);
-app.use('/api/upload', uploadRouter);
 
 io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
@@ -80,9 +76,8 @@ io.on('connection', socket => {
             })
             contacts = user.contacts
             contacts.mutuals = mutuals
-            console.log(contacts)
             try {
-                await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts })
+                await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
             } catch (err) {
                 console.log(err)
             }
