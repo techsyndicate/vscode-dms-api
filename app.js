@@ -70,9 +70,10 @@ io.on('connection', socket => {
             message.save() // Save message in database
             if (msg.group) { // Check if message is for group
                 io.to(msg.conversation_id).emit('receive-message', message); // Forward message to group
-                let group = Group.findOne({ conversation_id: msg.conversation_id })
+                let group = await Group.findOne({ conversation_id: msg.conversation_id })
+                console.log(group)
                 group.members.forEach(async(member) => {
-                    let storedMember = User.findOne({ username: member })
+                    let storedMember = await User.findOne({ username: member })
                     groups = storedMember.contacts.groups
                     groups.forEach(group => {
                         if (group.conversation_id == msg.conversation_id) {
