@@ -26,6 +26,7 @@ const signinRouter = require('./routes/signin');
 const usersRouter = require('./routes/users');
 const messageRouter = require('./routes/messages');
 const groupsRouter = require('./routes/groups');
+const contactsRouter = require('./routes/contacts');
 
 mongoose.connect(db, { useUnifiedTopology: true, useNewUrlParser: true })
     .then(() => console.log('MongoDB Connected...'))
@@ -42,6 +43,7 @@ app.use('/api/users/signin', signinRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/messages', messageRouter);
 app.use('/api/groups', groupsRouter);
+app.use('/api/contacts', contactsRouter);
 
 io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
@@ -75,6 +77,7 @@ io.on('connection', socket => {
                 if (contact.username == msg.receiver) {
                     contact['last_message_time'] = msg.date // Last message time to sort contacts
                     contact['last_message'] = msg.message // Last message
+                    contact['last_message_author'] = msg.sender // Last message author
                 }
             })
             contacts = user.contacts

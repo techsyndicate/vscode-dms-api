@@ -1,6 +1,7 @@
 function createGroupConversationId(membersArray, name) {
     let a = ""
     let b = ""
+    name = name.replace(/ /g, '')
     membersArray.forEach(element => {
         b = element
         if (a < b) {

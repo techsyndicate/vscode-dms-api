@@ -20,6 +20,10 @@ const GroupSchema = new mongoose.Schema({
     conversation_id: {
         type: String,
         required: true
+    },
+    avatar_url: {
+        type: String,
+        required: true
     }
 })
 
