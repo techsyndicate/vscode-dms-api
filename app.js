@@ -64,7 +64,8 @@ io.on('connection', socket => {
                 receiver: msg.receiver,
                 type: msg.type,
                 message: jsStringEscape(msg.message).replace(/    /g, "\\t"),
-                conversation_id: msg.conversation_id
+                conversation_id: msg.conversation_id,
+                group: msg.group
             })
             message.save() // Save message in database
             if (msg.group) { // Check if message is for group
