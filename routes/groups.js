@@ -16,11 +16,12 @@ router.post('/create', async(req, res) => {
         let group = new Group({
             name: name,
             date_of_creation: date,
-            admin: admin,
+            admin: admin.username,
             members: members,
             conversation_id: conversation_id
         })
         group.save()
+        res.send(200)
     } else {
         res.sendStatus(401)
     }
