@@ -24,6 +24,11 @@ router.get('/', async(req, res) => {
             avatar_url: group.avatar_url
         })
     })
+    finalContacts.sort(function(a, b) {
+        var c = new Date(a.last_message_time);
+        var d = new Date(b.last_message_time);
+        return d - c;
+    });
     res.send(finalContacts)
 });
 

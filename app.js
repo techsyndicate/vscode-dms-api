@@ -5,6 +5,7 @@ const cors = require("cors");
 const socketIO = require('socket.io');
 const User = require('./models/User');
 const Message = require('./models/Message');
+const Group = require('./models/Group');
 const jsStringEscape = require('js-string-escape');
 require('dotenv').config();
 
@@ -66,26 +67,60 @@ io.on('connection', socket => {
                 conversation_id: msg.conversation_id
             })
             message.save() // Save message in database
-            let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
-            if (receiver.socket_id) {
-                io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
+            if (msg.group) { // Check if message is for group
+                io.to(msg.conversation_id).emit('receive-message', message); // Forward message to group
+                let group = Group.findOne({ conversation_id: msg.conversation_id })
+                group.members.forEach(member => {
+                    let storedMember = User.findOne({ username: member })
+                    groups = storedMember.contacts.groups
+                    groups.forEach(group => {
+                        if (group.conversation_id == msg.conversation_id) {
+                            group['last_message_time'] = msg.date // Last message time to sort contacts
+                            group['last_message'] = msg.message // Last message
+                            group['last_message_author'] = msg.sender // Last message author
+                        }
+                    })
+                    contacts = storedMember.contacts
+                    contacts.groups = groups
+                    try {
+                        await User.findOneAndUpdate({ username: member }, { contacts: contacts })
+                    } catch (err) {
+                        console.log(err)
+                    }
+                })
             } else {
-                console.log('User offline')
-            }
-            mutuals = user.contacts.mutuals
-            mutuals.forEach(contact => {
-                if (contact.username == msg.receiver) {
-                    contact['last_message_time'] = msg.date // Last message time to sort contacts
-                    contact['last_message'] = msg.message // Last message
-                    contact['last_message_author'] = msg.sender // Last message author
+                let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
+                if (receiver.socket_id) {
+                    io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
+                } else {
+                    console.log('User offline')
                 }
-            })
-            contacts = user.contacts
-            contacts.mutuals = mutuals
-            try {
-                await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
-            } catch (err) {
-                console.log(err)
+                mutuals = user.contacts.mutuals
+                mutualsReceiver = receiver.contacts.mutuals
+                mutualsReceiver.forEach(contact => { // Update the last message for receiver also
+                    if (contact.username == msg.sender) {
+                        contact['last_message_time'] = msg.date // Last message time to sort contacts
+                        contact['last_message'] = msg.message // Last message
+                        contact['last_message_author'] = msg.sender // Last message author
+                    }
+                })
+                mutuals.forEach(contact => {
+                    if (contact.username == msg.receiver) {
+                        contact['last_message_time'] = msg.date // Last message time to sort contacts
+                        contact['last_message'] = msg.message // Last message
+                        contact['last_message_author'] = msg.sender // Last message author
+                    }
+                })
+                contactsReceiver = receiver.contacts
+                contactsReceiver.mutuals = mutualsReceiver
+                contacts = user.contacts
+                contacts.mutuals = mutuals
+                try {
+                    await User.findOneAndUpdate({ username: msg.receiver }, { contacts: contactsReceiver })
+                    await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
+                } catch (err) {
+                    console.log(err)
+                }
             }
         } else {
             console.log('denied')

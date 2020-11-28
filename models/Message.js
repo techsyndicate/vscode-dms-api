@@ -24,6 +24,10 @@ const MessageSchema = new mongoose.Schema({
     message: {
         type: String,
         required: true
+    },
+    group: {
+        type: Boolean,
+        required: true
     }
 })
 
