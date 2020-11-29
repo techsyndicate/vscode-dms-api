@@ -38,7 +38,7 @@ router.post('/create', async(req, res) => {
             if (!user.contacts.groups) {
                 user.contacts.groups = []
             }
-            group.last_message_time = '2000-01-31T00:00:00.000Z'
+            group.last_message_time = date
             user.contacts.group_no += 1
             user.contacts.groups.push(group)
             try {
