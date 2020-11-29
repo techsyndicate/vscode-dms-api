@@ -84,7 +84,7 @@ io.on('connection', socket => {
                     contacts = storedMember.contacts
                     contacts.groups = groups
                     try {
-                        await User.findOneAndUpdate({ username: member }, { contacts: contacts })
+                        await User.findOneAndUpdate({ username: member }, { contacts: contacts, chat: { last_group: true, last_user: msg.receiver, last_id: msg.conversation_id } })
                     } catch (err) {
                         console.log(err)
                     }
