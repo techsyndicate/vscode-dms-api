@@ -55,19 +55,19 @@ router.post('/create', async(req, res) => {
 
 router.post('/delete', async(req, res) => {
     let userAccessToken = req.query.access_token
-    let user = User.findOne({ access_token: userAccessToken })
-    if (user) {
-        let name = req.body.name
-        let members = req.body.members
-        let conversation_id = createGroupConversationId(members, name)
+    let conversation_id = req.query.conversation_id
+    try {
+        let user = await User.findOne({ access_token: userAccessToken })
         let group = await Group.findOne({ conversation_id: conversation_id })
-        if (group.admin == user) {
+        if (user.username == group.admin) {
             await Group.deleteOne({ conversation_id: conversation_id })
+            res.sendStatus(200)
         } else {
             res.sendStatus(401)
         }
-    } else {
-        res.sendStatus(401)
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(404)
     }
 })
 
