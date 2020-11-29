@@ -27,7 +27,7 @@ const UserSchema = new mongoose.Schema({
     },
     chat: {
         type: Object,
-        required: true
+        required: false
     }
 })
 
