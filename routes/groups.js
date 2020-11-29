@@ -59,20 +59,21 @@ router.get('/delete', async(req, res) => {
     try {
         let user = await User.findOne({ access_token: userAccessToken })
         let group = await Group.findOne({ conversation_id: conversation_id })
-        group.members.forEach(async(member) => {
-            let mem = await User.findOne({ username: member })
-            mem.contacts.groups.forEach(async(groupInside, index) => {
-                if (groupInside.conversation_id == group.conversation_id) {
-                    mem.contacts.groups.splice(index, 1)
-                }
-                try {
-                    await User.findOneAndUpdate({ username: member }, { contacts: mem.contacts })
-                } catch (error) {
-                    console.log(error)
-                }
-            })
-        })
         if (user.username == group.admin) {
+            group.members.forEach(async(member) => {
+                let mem = await User.findOne({ username: member })
+                mem.contacts.groups.forEach(async(groupInside, index) => {
+                    if (groupInside.conversation_id == group.conversation_id) {
+                        mem.contacts.groups.splice(index, 1)
+                    }
+                    try {
+                        await User.findOneAndUpdate({ username: member }, { contacts: mem.contacts })
+                        console.log(member + ' group deleted')
+                    } catch (error) {
+                        console.log(error)
+                    }
+                })
+            })
             await Group.deleteOne({ conversation_id: conversation_id })
             res.sendStatus(200)
         } else {
