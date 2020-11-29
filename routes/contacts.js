@@ -35,6 +35,18 @@ router.get('/', async(req, res) => {
         });
         res.send(finalContacts)
     } else {
+        let groups = await Group.find({ members: user.username })
+        user.contacts.group_no = groups.length
+        user.contacts.groups = []
+        groups.forEach(group => {
+            group.last_message_time = group.date_of_creation
+            user.contacts.groups.push(group)
+        })
+        try {
+            await User.findOneAndUpdate({ username: user.username }, { contacts: user.contacts })
+        } catch (err) {
+            console.log(err)
+        }
         res.send(finalContacts)
     }
 });
