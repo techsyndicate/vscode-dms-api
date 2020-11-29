@@ -71,7 +71,6 @@ io.on('connection', socket => {
             if (msg.group) { // Check if message is for group
                 io.to(msg.conversation_id).emit('receive-message', message); // Forward message to group
                 let group = await Group.findOne({ conversation_id: msg.conversation_id })
-                console.log(group)
                 group.members.forEach(async(member) => {
                     let storedMember = await User.findOne({ username: member })
                     groups = storedMember.contacts.groups
@@ -131,6 +130,9 @@ io.on('connection', socket => {
     socket.on('status', async(status) => {
         accessToken = status.user
         let user = await User.findOne({ access_token: accessToken })
+        user.contacts.groups.forEach(group => {
+            socket.join(group.conversation_id)
+        })
         status.user = user.username
         io.sockets.emit('status', status)
     })
