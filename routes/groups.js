@@ -53,12 +53,25 @@ router.post('/create', async(req, res) => {
     }
 });
 
-router.post('/delete', async(req, res) => {
+router.get('/delete', async(req, res) => {
     let userAccessToken = req.query.access_token
     let conversation_id = req.query.conversation_id
     try {
         let user = await User.findOne({ access_token: userAccessToken })
         let group = await Group.findOne({ conversation_id: conversation_id })
+        group.members.forEach(async(member) => {
+            let mem = await User.findOne({ username: member })
+            mem.contacts.groups.forEach(async(groupInside, index) => {
+                if (groupInside.conversation_id == group.conversation_id) {
+                    mem.contacts.groups.splice(index, 1)
+                }
+                try {
+                    await User.findOneAndUpdate({ username: member }, { contacts: mem.contacts })
+                } catch (error) {
+                    console.log(error)
+                }
+            })
+        })
         if (user.username == group.admin) {
             await Group.deleteOne({ conversation_id: conversation_id })
             res.sendStatus(200)
