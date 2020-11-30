@@ -51,9 +51,11 @@ io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
     socket.on('disconnect', async() => { // Disconnect event
         let user = await User.findOne({ socket_id: socket.id })
-        user.socket_id = "" // Delete socketID from database
-        user.save()
-        io.sockets.emit('status', { user: user.username, status: 'offline' }) // Send status to everyone that user is offline
+        if (user) {
+            user.socket_id = "" // Delete socketID from database
+            user.save()
+            io.sockets.emit('status', { user: user.username, status: 'offline' }) // Send status to everyone that user is offline
+        }
     })
     socket.on('send-message', async(msg) => { // Send message event
         msg = JSON.parse(msg)
@@ -74,23 +76,28 @@ io.on('connection', socket => {
                 let group = await Group.findOne({ conversation_id: msg.conversation_id })
                 group.members.forEach(async(member) => {
                     let storedMember = await User.findOne({ username: member })
-                    groups = storedMember.contacts.groups
-                    groups.forEach(group => {
-                        if (group.conversation_id == msg.conversation_id) {
-                            group['last_message_time'] = msg.date // Last message time to sort contacts
-                            group['last_message'] = msg.message // Last message
-                            group['last_message_author'] = msg.sender // Last message author
+                    if (storedMember) {
+                        console.log(member, storedMember.username)
+                        groups = storedMember.contacts.groups
+                        groups.forEach(group => {
+                            if (group.conversation_id == msg.conversation_id) {
+                                group['last_message_time'] = msg.date // Last message time to sort contacts
+                                group['last_message'] = msg.message // Last message
+                                group['last_message_author'] = msg.sender // Last message author
+                            }
+                        })
+                        storedMember.contacts.groups = groups
+                        storedMember.chat.last_group = true
+                        storedMember.chat.last_user = msg.receiver
+                        storedMember.chat.last_id = msg.conversation_id
+                        try {
+                            await User.findOneAndUpdate({ username: member }, { contacts: storedMember.contacts, chat: storedMember.chat })
+                        } catch (err) {
+                            console.log(err)
                         }
-                    })
-                    contacts = storedMember.contacts
-                    contacts.groups = groups
-                    storedMember.chat.last_group = true
-                    storedMember.chat.last_user = msg.receiver
-                    storedMember.chat.last_id = msg.conversation_id
-                    try {
-                        await User.findOneAndUpdate({ username: member }, { contacts: contacts, chat: storedMember.chat })
-                    } catch (err) {
-                        console.log(err)
+                        if (storedMember.socket_id == "") {
+                            await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${storedMember.access_token}&conversation_id=${msg.conversation_id}`)
+                        }
                     }
                 })
             } else {
