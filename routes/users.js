@@ -165,6 +165,7 @@ router.post('/unread', async(req, res) => {
     let user = await User.findOne({ access_token: accessToken })
     if (!user.chat.unread) {
         user.chat.unread = []
+        user.chat.unread.push(conversationId)
         try {
             await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
             res.sendStatus(200)
