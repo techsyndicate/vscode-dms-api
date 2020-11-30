@@ -7,6 +7,7 @@ const User = require('./models/User');
 const Message = require('./models/Message');
 const Group = require('./models/Group');
 const jsStringEscape = require('js-string-escape');
+const axios = require('axios')
 require('dotenv').config();
 
 const db = process.env.MONGODB_URL;
@@ -97,6 +98,11 @@ io.on('connection', socket => {
                             io.to(receiver.contacts_socket_id).emit('receive-message', message)
                             io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
                         } else {
+                            try {
+                                await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${receiver.access_token}&conversation_id=${message.conversation_id}`)
+                            } catch (err) {
+                                console.log(err)
+                            }
                             console.log('User offline')
                         }
                         mutuals = user.contacts.mutuals
