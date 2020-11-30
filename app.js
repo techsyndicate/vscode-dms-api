@@ -84,8 +84,11 @@ io.on('connection', socket => {
                     })
                     contacts = storedMember.contacts
                     contacts.groups = groups
+                    storedMember.chat.last_group = true
+                    storedMember.chat.last_user = msg.receiver
+                    storedMember.chat.last_id = msg.conversation_id
                     try {
-                        await User.findOneAndUpdate({ username: member }, { contacts: contacts, chat: { last_group: true, last_user: msg.receiver, last_id: msg.conversation_id } })
+                        await User.findOneAndUpdate({ username: member }, { contacts: contacts, chat: storedMember.chat })
                     } catch (err) {
                         console.log(err)
                     }
@@ -125,9 +128,10 @@ io.on('connection', socket => {
                         contactsReceiver.mutuals = mutualsReceiver
                         contacts = user.contacts
                         contacts.mutuals = mutuals
+                        user.chat.last_user = msg.receiver
                         try {
                             await User.findOneAndUpdate({ username: msg.receiver }, { contacts: contactsReceiver })
-                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
+                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: user.chat })
                         } catch (err) {
                             console.log(err)
                         }
