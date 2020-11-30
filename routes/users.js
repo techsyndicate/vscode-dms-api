@@ -173,7 +173,7 @@ router.post('/unread', async(req, res) => {
             res.sendStatus(404)
         }
     } else {
-        if (!user.chat.unreads.includes(conversationId)) {
+        if (!user.chat.unread.includes(conversationId)) {
             user.chat.unread.push(conversationId)
             try {
                 await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
