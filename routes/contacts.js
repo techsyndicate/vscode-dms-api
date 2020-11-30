@@ -11,6 +11,13 @@ router.get('/', async(req, res) => {
     let userContacts = await axios.get(`${process.env.BASE_URL}/api/users/contacts?access_token=${userAccessToken}`)
     userContacts.data.forEach(element => {
         element['type'] = 'user'
+        let conversation_id = ""
+        if (element.username < user.username) {
+            conversation_id = `${element.username}${user.username}`
+        } else {
+            conversation_id = `${user.username}${element.username}`
+        }
+        element['conversation_id'] = conversation_id
         finalContacts.push(element)
     })
     if (user.contacts.groups) {
