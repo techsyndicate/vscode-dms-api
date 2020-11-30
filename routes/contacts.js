@@ -16,6 +16,7 @@ router.get('/', async(req, res) => {
             conversation_id = `${element.username}${user.username}`
         } else {
             conversation_id = `${user.username}${element.username}`
+        }
         element['conversation_id'] = conversation_id
         finalContacts.push(element)
     })
