@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const User = require('../models/User');
-const { oauthHeader } = require('../controllers/constants')
+const { oauthHeader } = require('../controllers/constants');
+const e = require('express');
 
 router.get('/', (req, res) => {
     let userAccessToken = req.query.access_token
@@ -66,6 +67,14 @@ router.get('/socket', async(req, res) => {
     res.sendStatus(200)
 });
 
+router.get('/socket/contacts', async(req, res) => {
+    const accessToken = req.query.access_token;
+    const socketId = req.query.socket_id;
+    const user = await User.findOne({ access_token: accessToken });
+    await user.updateOne({ contacts_socket_id: socketId });
+    res.sendStatus(200)
+});
+
 router.get('/dissocket', async(req, res) => {
     const accessToken = req.query.access_token;
     const user = await User.findOne({ access_token: accessToken });
@@ -84,7 +93,11 @@ router.get('/:username/status', async(req, res) => {
         res.sendStatus(401);
     } else {
         User.findOne({ username: username }).then(user => {
-            !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online' });
+            if (!user) {
+                res.json({ status: 'unavailable' })
+            } else {
+                !user.socket_id ? res.json({ status: 'offline' }) : res.json({ status: 'online' });
+            }
         });
     }
 });
@@ -146,4 +159,64 @@ async function getContacts(userAccessToken) {
     return contacts;
 }
 
+router.post('/unread', async(req, res) => {
+    accessToken = req.query.access_token
+    conversationId = req.query.conversation_id
+    let user = await User.findOne({ access_token: accessToken })
+    if (!user.chat.unread) {
+        user.chat.unread = []
+        try {
+            await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+            res.sendStatus(200)
+        } catch (err) {
+            console.log(err)
+            res.sendStatus(404)
+        }
+    } else {
+        user.chat.unread.push(conversationId)
+        try {
+            await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+            res.sendStatus(200)
+        } catch (err) {
+            console.log(err)
+            res.sendStatus(404)
+        }
+    }
+})
+
+router.get('/unread', async(req, res) => {
+    accessToken = req.query.access_token
+    let user = await User.findOne({ access_token: accessToken })
+    if (!user.chat.unread) {
+        user.chat.unread = []
+        await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+        res.json(user.chat.unread)
+    } else {
+        res.json(user.chat.unread)
+    }
+})
+
+router.post('/read', async(req, res) => {
+    accessToken = req.query.access_token
+    conversationId = req.query.conversation_id
+    let user = await User.findOne({ access_token: accessToken })
+    if (!user.chat.unread) {
+        user.chat.unread = []
+        await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+        res.sendStatus(200)
+    } else {
+        user.chat.unread.forEach(async(value, index) => {
+            if (value == conversationId) {
+                user.chat.unread.splice(index, 1)
+            }
+        })
+        try {
+            await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+        } catch (err) {
+            console.log(err)
+            res.sendStatus(404)
+        }
+        res.sendStatus(200)
+    }
+})
 module.exports = router;

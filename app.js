@@ -90,35 +90,44 @@ io.on('connection', socket => {
                     }
                 })
             } else {
-                let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
-                if (receiver.socket_id) {
-                    io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
-                } else {
-                    console.log('User offline')
-                }
-                mutuals = user.contacts.mutuals
-                mutualsReceiver = receiver.contacts.mutuals
-                mutualsReceiver.forEach(contact => { // Update the last message for receiver also
-                    if (contact.username == msg.sender) {
-                        contact['last_message_time'] = msg.date // Last message time to sort contacts
-                        contact['last_message'] = msg.message // Last message
-                        contact['last_message_author'] = msg.sender // Last message author
-                    }
-                })
-                mutuals.forEach(contact => {
-                    if (contact.username == msg.receiver) {
-                        contact['last_message_time'] = msg.date // Last message time to sort contacts
-                        contact['last_message'] = msg.message // Last message
-                        contact['last_message_author'] = msg.sender // Last message author
-                    }
-                })
-                contactsReceiver = receiver.contacts
-                contactsReceiver.mutuals = mutualsReceiver
-                contacts = user.contacts
-                contacts.mutuals = mutuals
                 try {
-                    await User.findOneAndUpdate({ username: msg.receiver }, { contacts: contactsReceiver })
-                    await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
+                    let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
+                    if (receiver) {
+                        if (receiver.socket_id) {
+                            io.to(receiver.contacts_socket_id).emit('receive-message', message)
+                            io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
+                        } else {
+                            console.log('User offline')
+                        }
+                        mutuals = user.contacts.mutuals
+                        mutualsReceiver = receiver.contacts.mutuals
+                        mutualsReceiver.forEach(contact => { // Update the last message for receiver also
+                            if (contact.username == msg.sender) {
+                                contact['last_message_time'] = msg.date // Last message time to sort contacts
+                                contact['last_message'] = msg.message // Last message
+                                contact['last_message_author'] = msg.sender // Last message author
+                            }
+                        })
+                        mutuals.forEach(contact => {
+                            if (contact.username == msg.receiver) {
+                                contact['last_message_time'] = msg.date // Last message time to sort contacts
+                                contact['last_message'] = msg.message // Last message
+                                contact['last_message_author'] = msg.sender // Last message author
+                            }
+                        })
+                        contactsReceiver = receiver.contacts
+                        contactsReceiver.mutuals = mutualsReceiver
+                        contacts = user.contacts
+                        contacts.mutuals = mutuals
+                        try {
+                            await User.findOneAndUpdate({ username: msg.receiver }, { contacts: contactsReceiver })
+                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: { last_user: msg.receiver } })
+                        } catch (err) {
+                            console.log(err)
+                        }
+                    } else {
+                        console.log('User doesn\'t exist.')
+                    }
                 } catch (err) {
                     console.log(err)
                 }
