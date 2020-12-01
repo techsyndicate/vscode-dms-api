@@ -47,6 +47,7 @@ app.use('/api/messages', messageRouter);
 app.use('/api/groups', groupsRouter);
 app.use('/api/contacts', contactsRouter);
 
+// Socket connection event
 io.on('connection', socket => {
     console.log('a user connected: ' + socket.id);
     socket.on('disconnect', async() => { // Disconnect event
@@ -59,8 +60,8 @@ io.on('connection', socket => {
     })
     socket.on('send-message', async(msg) => { // Send message event
         msg = JSON.parse(msg)
-        let user = await User.findOne({ access_token: msg.access_token })
-        if (user.username == msg.sender) { // Confirm that the sender of the message is indeed the client side sender
+        let sender = await User.findOne({ access_token: msg.access_token })
+        if (sender.username == msg.sender) { // Confirm that the sender of the message is indeed the client side sender
             let message = new Message({
                 date: msg.date,
                 sender: msg.sender,
@@ -74,38 +75,20 @@ io.on('connection', socket => {
             if (msg.group) { // Check if message is for group
                 io.to(msg.conversation_id).emit('receive-message', message); // Forward message to group
                 let group = await Group.findOne({ conversation_id: msg.conversation_id })
-                group.members.forEach(async(member) => {
-                    let storedMember = await User.findOne({ username: member })
-                    if (storedMember) {
-                        console.log(member, storedMember.username)
-                        groups = storedMember.contacts.groups
-                        groups.forEach(group => {
-                            if (group.conversation_id == msg.conversation_id) {
-                                group['last_message_time'] = msg.date // Last message time to sort contacts
-                                group['last_message'] = msg.message // Last message
-                                group['last_message_author'] = msg.sender // Last message author
-                            }
-                        })
-                        storedMember.contacts.groups = groups
-                        storedMember.chat.last_group = true
-                        storedMember.chat.last_user = msg.receiver
-                        storedMember.chat.last_id = msg.conversation_id
-                        try {
-                            await User.findOneAndUpdate({ username: member }, { contacts: storedMember.contacts, chat: storedMember.chat })
-                        } catch (err) {
-                            console.log(err)
-                        }
-                        if (storedMember.socket_id == "") {
-                            await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${storedMember.access_token}&conversation_id=${msg.conversation_id}`)
-                        }
-                    }
-                })
+                group.last_message = msg.message
+                group.last_message_author = msg.sender
+                group.last_message_time = msg.date
+                await group.updateOne({ last_message: msg.message })
+                await group.updateOne({ last_message_time: msg.date })
+                await group.updateOne({ last_message_author: msg.sender })
+                if (storedMember.socket_id == "") {
+                    await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${storedMember.access_token}&conversation_id=${msg.conversation_id}`)
+                }
             } else {
                 try {
                     let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
                     if (receiver) {
                         if (receiver.socket_id) {
-                            io.to(receiver.contacts_socket_id).emit('receive-message', message)
                             io.to(receiver.socket_id).emit('receive-message', message); // Send message to receiver through socket
                         } else {
                             try {
@@ -115,30 +98,24 @@ io.on('connection', socket => {
                             }
                             console.log('User offline')
                         }
-                        mutuals = user.contacts.mutuals
-                        mutualsReceiver = receiver.contacts.mutuals
-                        mutualsReceiver.forEach(contact => { // Update the last message for receiver also
+                        receiver.contacts.mutuals.forEach(contact => { // Update the last message for receiver also
                             if (contact.username == msg.sender) {
                                 contact['last_message_time'] = msg.date // Last message time to sort contacts
                                 contact['last_message'] = msg.message // Last message
                                 contact['last_message_author'] = msg.sender // Last message author
                             }
                         })
-                        mutuals.forEach(contact => {
+                        user.contacts.mutuals.forEach(contact => {
                             if (contact.username == msg.receiver) {
                                 contact['last_message_time'] = msg.date // Last message time to sort contacts
                                 contact['last_message'] = msg.message // Last message
                                 contact['last_message_author'] = msg.sender // Last message author
                             }
                         })
-                        contactsReceiver = receiver.contacts
-                        contactsReceiver.mutuals = mutualsReceiver
-                        contacts = user.contacts
-                        contacts.mutuals = mutuals
                         user.chat.last_user = msg.receiver
                         try {
-                            await User.findOneAndUpdate({ username: msg.receiver }, { contacts: contactsReceiver })
-                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: contacts, chat: user.chat })
+                            await User.findOneAndUpdate({ username: msg.receiver }, { contacts: receiver.contacts })
+                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: user.contacts, chat: user.chat })
                         } catch (err) {
                             console.log(err)
                         }
@@ -156,8 +133,8 @@ io.on('connection', socket => {
     socket.on('status', async(status) => {
         accessToken = status.user
         let user = await User.findOne({ access_token: accessToken })
-        user.contacts.groups.forEach(group => {
-            socket.join(group.conversation_id)
+        user.contacts.groups.forEach(async(group) => {
+            await socket.join(group.conversation_id)
         })
         status.user = user.username
         io.sockets.emit('status', status)

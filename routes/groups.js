@@ -27,26 +27,12 @@ router.post('/create', async(req, res) => {
             admin: admin.username,
             members: members,
             conversation_id: conversation_id,
-            avatar_url: avatar_url
+            avatar_url: avatar_url,
+            last_message: '',
+            last_message_author: '',
+            last_message_time: date
         })
         await group.save()
-        members.forEach(async(member) => {
-            let user = await User.findOne({ username: member })
-            if (!user.contacts.group_no) {
-                user.contacts.group_no = 0
-            }
-            if (!user.contacts.groups) {
-                user.contacts.groups = []
-            }
-            group.last_message_time = date
-            user.contacts.group_no += 1
-            user.contacts.groups.push(group)
-            try {
-                await User.findOneAndUpdate({ username: member }, { contacts: user.contacts })
-            } catch (error) {
-                console.log(error)
-            }
-        })
         res.sendStatus(200)
     } else {
         res.sendStatus(401)
@@ -60,20 +46,6 @@ router.get('/delete', async(req, res) => {
         let user = await User.findOne({ access_token: userAccessToken })
         let group = await Group.findOne({ conversation_id: conversation_id })
         if (user.username == group.admin) {
-            group.members.forEach(async(member) => {
-                let mem = await User.findOne({ username: member })
-                mem.contacts.groups.forEach(async(groupInside, index) => {
-                    if (groupInside.conversation_id == group.conversation_id) {
-                        mem.contacts.groups.splice(index, 1)
-                    }
-                    try {
-                        await User.findOneAndUpdate({ username: member }, { contacts: mem.contacts })
-                        console.log(member + ' group deleted')
-                    } catch (error) {
-                        console.log(error)
-                    }
-                })
-            })
             await Group.deleteOne({ conversation_id: conversation_id })
             res.sendStatus(200)
         } else {

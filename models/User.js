@@ -17,10 +17,6 @@ const UserSchema = new mongoose.Schema({
         type: Object,
         required: false
     },
-    contacts_socket_id: {
-        type: String,
-        required: false
-    },
     socket_id: {
         type: String,
         required: false

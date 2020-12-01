@@ -24,6 +24,18 @@ const GroupSchema = new mongoose.Schema({
     avatar_url: {
         type: String,
         required: true
+    },
+    last_message_time: {
+        type: Date,
+        required: false
+    },
+    last_message: {
+        type: String,
+        required: false
+    },
+    last_message_author: {
+        type: String,
+        required: false
     }
 })
 
