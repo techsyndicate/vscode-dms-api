@@ -60,7 +60,7 @@ io.on('connection', socket => {
     })
     socket.on('send-message', async(msg) => { // Send message event
         msg = JSON.parse(msg)
-        let sender = await User.findOne({ access_token: msg.access_token })
+        const sender = await User.findOne({ access_token: msg.access_token })
         if (sender.username == msg.sender) { // Confirm that the sender of the message is indeed the client side sender
             let message = new Message({
                 date: msg.date,
