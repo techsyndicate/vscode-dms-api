@@ -192,7 +192,12 @@ router.post('/unread', async(req, res) => {
 router.get('/unread', async(req, res) => {
     accessToken = req.query.access_token
     let user = await User.findOne({ access_token: accessToken })
-    if (!user.chat.unread) {
+    if (!user.chat) {
+        user.chat = {}
+        user.chat.unread = []
+        await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
+        res.json(user.chat.unread)
+    } else if (!user.chat.unread) {
         user.chat.unread = []
         await User.findOneAndUpdate({ access_token: accessToken }, { chat: user.chat })
         res.json(user.chat.unread)
