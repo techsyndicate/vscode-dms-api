@@ -81,9 +81,12 @@ io.on('connection', socket => {
                 await group.updateOne({ last_message: msg.message })
                 await group.updateOne({ last_message_time: msg.date })
                 await group.updateOne({ last_message_author: msg.sender })
-                if (storedMember.socket_id == "") {
-                    await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${storedMember.access_token}&conversation_id=${msg.conversation_id}`)
-                }
+                group.members.forEach(async(member) => {
+                    let storedMember = await User.findOne({ username: member })
+                    if (storedMember.socket_id == "") {
+                        await axios.post(`${process.env.BASE_URL}/api/users/unread?access_token=${storedMember.access_token}&conversation_id=${msg.conversation_id}`)
+                    }
+                })
             } else {
                 try {
                     let receiver = await User.findOne({ username: msg.receiver }) // Check if receiver is online
