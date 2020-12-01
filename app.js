@@ -119,7 +119,7 @@ io.on('connection', socket => {
                                 contact['last_message_author'] = msg.sender // Last message author
                             }
                         })
-                        sender.chat.last_user = msg.receiver
+                        sender.chat = { last_user: msg.receiver }
                         try {
                             await User.findOneAndUpdate({ username: msg.receiver }, { contacts: receiver.contacts })
                             await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: sender.contacts, chat: sender.chat })
