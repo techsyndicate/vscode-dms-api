@@ -133,7 +133,8 @@ io.on('connection', socket => {
     socket.on('status', async(status) => {
         accessToken = status.user
         let user = await User.findOne({ access_token: accessToken })
-        user.contacts.groups.forEach(async(group) => {
+        let groups = await Group.find({ members: user.username })
+        groups.forEach(async(group) => {
             await socket.join(group.conversation_id)
         })
         status.user = user.username
