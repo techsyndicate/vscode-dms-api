@@ -108,17 +108,17 @@ io.on('connection', socket => {
                                 contact['last_message_author'] = msg.sender // Last message author
                             }
                         })
-                        user.contacts.mutuals.forEach(contact => {
+                        sender.contacts.mutuals.forEach(contact => {
                             if (contact.username == msg.receiver) {
                                 contact['last_message_time'] = msg.date // Last message time to sort contacts
                                 contact['last_message'] = msg.message // Last message
                                 contact['last_message_author'] = msg.sender // Last message author
                             }
                         })
-                        user.chat.last_user = msg.receiver
+                        sender.chat.last_user = msg.receiver
                         try {
                             await User.findOneAndUpdate({ username: msg.receiver }, { contacts: receiver.contacts })
-                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: user.contacts, chat: user.chat })
+                            await User.findOneAndUpdate({ access_token: msg.access_token }, { contacts: sender.contacts, chat: sender.chat })
                         } catch (err) {
                             console.log(err)
                         }
